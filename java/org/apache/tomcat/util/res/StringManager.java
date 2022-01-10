@@ -16,14 +16,9 @@
  */
 package org.apache.tomcat.util.res;
 
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * An internationalization / localization helper class which reduces
@@ -130,7 +125,7 @@ public class StringManager {
         try {
             // Avoid NPE if bundle is null and treat it like an MRE
             if (bundle != null) {
-                str = bundle.getString(key);
+                str = new String(bundle.getString(key).getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
             }
         } catch (MissingResourceException mre) {
             //bad: shouldn't mask an exception the following way:

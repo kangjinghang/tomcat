@@ -244,12 +244,12 @@ public final class Bootstrap {
 
 
     /**
-     * Initialize daemon.
+     * Initialize daemon. 创建Catalina 及 初始化类加载器
      * @throws Exception Fatal initialization error
      */
     public void init() throws Exception {
 
-        initClassLoaders();
+        initClassLoaders(); // 初始化类加载器
 
         Thread.currentThread().setContextClassLoader(catalinaLoader);
 
@@ -260,7 +260,7 @@ public final class Bootstrap {
             log.debug("Loading startup class");
         }
         Class<?> startupClass = catalinaLoader.loadClass("org.apache.catalina.startup.Catalina");
-        Object startupInstance = startupClass.getConstructor().newInstance();
+        Object startupInstance = startupClass.getConstructor().newInstance(); // 通过反射创建Catalina
 
         // Set the shared extensions class loader
         if (log.isDebugEnabled()) {
@@ -280,7 +280,7 @@ public final class Bootstrap {
 
 
     /**
-     * Load daemon.
+     * Load daemon. 调用Catalina的load方法
      */
     private void load(String[] arguments) throws Exception {
 
@@ -302,7 +302,7 @@ public final class Bootstrap {
         if (log.isDebugEnabled()) {
             log.debug("Calling startup class " + method);
         }
-        method.invoke(catalinaDaemon, param);
+        method.invoke(catalinaDaemon, param); // 反射调用Catalina.load()
     }
 
 
@@ -342,7 +342,7 @@ public final class Bootstrap {
         }
 
         Method method = catalinaDaemon.getClass().getMethod("start", (Class [])null);
-        method.invoke(catalinaDaemon, (Object [])null);
+        method.invoke(catalinaDaemon, (Object [])null); // 反射调用Catalina.start()
     }
 
 
@@ -432,8 +432,9 @@ public final class Bootstrap {
     /**
      * Main method and entry point when starting Tomcat via the provided
      * scripts.
-     * -Djava.util.logging.config.file=/Users/kangjinghang/workspace/github/tomcat/conf/logging.properties -Dcatalina.home=/Users/kangjinghang/workspace/github/tomcat -Dcatalina.base=/Users/kangjinghang/workspace/github/tomcat -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager start
-     * @param args Command line arguments to be processed
+     * vm启动参数如下：
+     *  -Djava.util.logging.config.file=/Users/kangjinghang/workspace/github/tomcat/conf/logging.properties -Dcatalina.home=/Users/kangjinghang/workspace/github/tomcat -Dcatalina.base=/Users/kangjinghang/workspace/github/tomcat -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager start     * @param args Command line arguments to be processed
+     *  然后浏览器输入：http://localhost:8080/index.jsp
      */
     public static void main(String args[]) {
 
@@ -442,7 +443,7 @@ public final class Bootstrap {
                 // Don't set daemon until init() has completed
                 Bootstrap bootstrap = new Bootstrap();
                 try {
-                    bootstrap.init();
+                    bootstrap.init(); // 创建Catalina 及 初始化类加载器
                 } catch (Throwable t) {
                     handleThrowable(t);
                     t.printStackTrace();
@@ -472,7 +473,7 @@ public final class Bootstrap {
                 daemon.stop();
             } else if (command.equals("start")) {
                 daemon.setAwait(true);
-                daemon.load(args);
+                daemon.load(args); // 调用Catalina的load方法
                 daemon.start();
                 if (null == daemon.getServer()) {
                     System.exit(1);

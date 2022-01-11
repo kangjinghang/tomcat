@@ -16,36 +16,6 @@
  */
 package org.apache.tomcat.util.net;
 
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.Channel;
-import java.nio.channels.CompletionHandler;
-import java.nio.channels.FileChannel;
-import java.nio.channels.NetworkChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.WritableByteChannel;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.net.ssl.SSLEngine;
-
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
@@ -54,6 +24,22 @@ import org.apache.tomcat.util.collections.SynchronizedQueue;
 import org.apache.tomcat.util.collections.SynchronizedStack;
 import org.apache.tomcat.util.net.AbstractEndpoint.Handler.SocketState;
 import org.apache.tomcat.util.net.jsse.JSSESupport;
+
+import javax.net.ssl.SSLEngine;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * NIO tailored thread pool, providing the following services:
@@ -218,10 +204,10 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel> {
     public void bind() throws Exception {
 
         if (!getUseInheritedChannel()) {
-            serverSock = ServerSocketChannel.open();
+            serverSock = ServerSocketChannel.open(); // nio api
             socketProperties.setProperties(serverSock.socket());
             InetSocketAddress addr = (getAddress()!=null?new InetSocketAddress(getAddress(),getPort()):new InetSocketAddress(getPort()));
-            serverSock.socket().bind(addr,getAcceptCount());
+            serverSock.socket().bind(addr,getAcceptCount()); // nio bind port 绑定端口号
         } else {
             // Retrieve the channel provided by the OS
             Channel ic = System.inheritedChannel();
@@ -281,7 +267,7 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel> {
                 pollerThread.start();
             }
 
-            startAcceptorThreads();
+            startAcceptorThreads(); // 开启Acceptor线程
         }
     }
 
@@ -509,7 +495,7 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel> {
                     try {
                         // Accept the next incoming connection from the server
                         // socket
-                        socket = serverSock.accept();
+                        socket = serverSock.accept(); // nio api 接收客户端的请求
 
                         SocketAddress currentRemoteAddress = socket.getRemoteAddress();
                         if (currentRemoteAddress.equals(previousAcceptedSocketRemoteAddress)) {

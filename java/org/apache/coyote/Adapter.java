@@ -20,7 +20,7 @@ import org.apache.tomcat.util.net.SocketEvent;
 
 /**
  * Adapter. This represents the entry point in a coyote-based servlet container.
- *
+ * 连接器调用CoyoteAdapter的Service方法，传入的是Tomcat Request对象，CoyoteAdapter负责将Tomcat Request转成ServletRequest，再调用容器的Service方法。
  *
  * @author Remy Maucherat
  * @see ProtocolHandler

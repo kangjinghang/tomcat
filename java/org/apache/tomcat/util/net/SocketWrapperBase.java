@@ -16,6 +16,11 @@
  */
 package org.apache.tomcat.util.net;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.ExceptionUtils;
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -29,11 +34,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.util.ExceptionUtils;
-import org.apache.tomcat.util.res.StringManager;
 
 public abstract class SocketWrapperBase<E> {
 
@@ -973,7 +973,7 @@ public abstract class SocketWrapperBase<E> {
          */
         protected boolean process() {
             try {
-                getEndpoint().getExecutor().execute(this);
+                getEndpoint().getExecutor().execute(this); // 为了提高处理能力，SocketProcessor被提交到线程池来执行
                 return true;
             } catch (RejectedExecutionException ree) {
                 log.warn(sm.getString("endpoint.executor.fail", SocketWrapperBase.this) , ree);

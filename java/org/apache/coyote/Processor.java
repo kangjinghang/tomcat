@@ -16,16 +16,19 @@
  */
 package org.apache.coyote;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.apache.tomcat.util.net.AbstractEndpoint.Handler.SocketState;
 import org.apache.tomcat.util.net.SSLSupport;
 import org.apache.tomcat.util.net.SocketEvent;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 /**
  * Common interface for processors of all protocols.
+ * Coyote 协议处理接口，如果说EndPoint是用来实现TCP/IP协议的，那么Processor用来实现HTTP协议，
+ * Processor接收来自EndPoint的Socket，读取字节流解析成Tomcat Request和Response对象，
+ * 并通过Adapter将其提交到容器处理，Processor是对应用层协议的抽象。
  */
 public interface Processor {
 

@@ -17,7 +17,7 @@
 package org.apache.tomcat.util.net;
 
 import java.util.Objects;
-
+// 用于【处理】接收到的Socket请求
 public abstract class SocketProcessorBase<S> implements Runnable {
 
     protected SocketWrapperBase<S> socketWrapper;
@@ -46,7 +46,7 @@ public abstract class SocketProcessorBase<S> implements Runnable {
             if (socketWrapper.isClosed()) {
                 return;
             }
-            doRun();
+            doRun(); // 调用协议处理组件Processor进行处理
         }
     }
 

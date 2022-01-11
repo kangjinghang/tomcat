@@ -16,27 +16,6 @@
  */
 package org.apache.tomcat.util.net;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-
 import org.apache.juli.logging.Log;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.IntrospectionUtils;
@@ -44,15 +23,24 @@ import org.apache.tomcat.util.collections.SynchronizedStack;
 import org.apache.tomcat.util.modeler.Registry;
 import org.apache.tomcat.util.net.AbstractEndpoint.Acceptor.AcceptorState;
 import org.apache.tomcat.util.res.StringManager;
-import org.apache.tomcat.util.threads.LimitLatch;
-import org.apache.tomcat.util.threads.ResizableExecutor;
 import org.apache.tomcat.util.threads.TaskQueue;
-import org.apache.tomcat.util.threads.TaskThreadFactory;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
+import org.apache.tomcat.util.threads.*;
+
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * @param <S> The type for the sockets managed by this endpoint.
- *
+ * Coyote 通信端点，即通信监听的接口，是具体Socket接收和发送处理器，是对传输层的抽象，因此EndPoint用来实现TCP/IP协议的。
  * @author Mladen Turk
  * @author Remy Maucherat
  */
@@ -128,7 +116,7 @@ public abstract class AbstractEndpoint<S> {
     protected enum BindState {
         UNBOUND, BOUND_ON_INIT, BOUND_ON_START, SOCKET_CLOSED_ON_STOP
     }
-
+    // 用于【监听】Socket连接请求
     public abstract static class Acceptor implements Runnable {
         public enum AcceptorState {
             NEW, RUNNING, PAUSED, ENDED
@@ -532,7 +520,7 @@ public abstract class AbstractEndpoint<S> {
     }
 
     /**
-     * External Executor based thread pool.
+     * External Executor based thread pool. 为了提高处理能力，SocketProcessor被提交到线程池来执行
      */
     private Executor executor = null;
     public void setExecutor(Executor executor) {
@@ -1186,7 +1174,7 @@ public abstract class AbstractEndpoint<S> {
 
     public void init() throws Exception {
         if (bindOnInit) {
-            bind();
+            bind(); // 绑定端口号，调用子类的模版方法实现
             bindState = BindState.BOUND_ON_INIT;
         }
         if (this.domain != null) {
@@ -1262,13 +1250,13 @@ public abstract class AbstractEndpoint<S> {
             bind();
             bindState = BindState.BOUND_ON_START;
         }
-        startInternal();
+        startInternal(); // 调用模版方法的子类实现
     }
 
     protected final void startAcceptorThreads() {
         acceptors = new Acceptor[1];
 
-        acceptors[0] = createAcceptor();
+        acceptors[0] = createAcceptor(); // 初始化acceptor线程
         String threadName = getName() + "-Acceptor-0";
         acceptors[0].setThreadName(threadName);
         Thread t = new Thread(acceptors[0], threadName);

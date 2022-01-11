@@ -16,9 +16,9 @@
  */
 package org.apache.coyote;
 
-import java.util.concurrent.Executor;
-
 import org.apache.tomcat.util.net.SSLHostConfig;
+
+import java.util.concurrent.Executor;
 
 /**
  * Abstract the protocol implementation, including threading, etc.
@@ -27,6 +27,9 @@ import org.apache.tomcat.util.net.SSLHostConfig;
  * Adapter is the main interface to be implemented by a coyote servlet
  * container.
  *
+ * Coyote 协议接口， 通过Endpoint 和 Processor ， 实现针对具体协议的处理能力。
+ * Tomcat 按照协议和I/O 提供了6个实现类 ： AjpNioProtocol，AjpAprProtocol，AjpNio2Protocol，Http11NioProtocol，
+ * Http11Nio2Protocol，Http11AprProtocol。我们在配置tomcat/conf/server.xml时，至少要指定具体的ProtocolHandler，当然也可以指定协议名称，如：HTTP/1.1
  * @author Remy Maucherat
  * @author Costin Manolache
  * @see Adapter

@@ -17,20 +17,7 @@
 package org.apache.catalina.core;
 
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.util.ArrayList;
-
-import javax.management.ObjectName;
-
-import org.apache.catalina.Container;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Executor;
-import org.apache.catalina.JmxEnabled;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Server;
-import org.apache.catalina.Service;
+import org.apache.catalina.*;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.mapper.Mapper;
 import org.apache.catalina.mapper.MapperListener;
@@ -38,6 +25,11 @@ import org.apache.catalina.util.LifecycleMBeanBase;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.management.ObjectName;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.util.ArrayList;
 
 
 /**
@@ -418,17 +410,17 @@ public class StandardService extends LifecycleMBeanBase implements Service {
         // Start our defined Container first
         if (engine != null) {
             synchronized (engine) {
-                engine.start();
+                engine.start(); // 调用父类LifeCycle的start方法，其实就是调用Engine的startInternal方法
             }
         }
 
         synchronized (executors) {
             for (Executor executor: executors) {
-                executor.start();
+                executor.start(); // 调用父类LifeCycle的start方法，其实就是调用Executor的startInternal方法
             }
         }
 
-        mapperListener.start();
+        mapperListener.start(); // 调用父类LifeCycle的start方法，其实就是调用MapperListener的startInternal方法
 
         // Start our defined Connectors second
         synchronized (connectorsLock) {
@@ -436,7 +428,7 @@ public class StandardService extends LifecycleMBeanBase implements Service {
                 try {
                     // If it has already failed, don't try and start it
                     if (connector.getState() != LifecycleState.FAILED) {
-                        connector.start();
+                        connector.start();  // 调用父类LifeCycle的start方法，其实就是调用Connector的startInternal方法
                     }
                 } catch (Exception e) {
                     log.error(sm.getString(
@@ -531,7 +523,7 @@ public class StandardService extends LifecycleMBeanBase implements Service {
         super.initInternal();
 
         if (engine != null) {
-            engine.init();
+            engine.init(); // 调用父类LifeCycle的init方法，其实就是调用Engine的initInternal方法
         }
 
         // Initialize any Executors
@@ -539,17 +531,17 @@ public class StandardService extends LifecycleMBeanBase implements Service {
             if (executor instanceof JmxEnabled) {
                 ((JmxEnabled) executor).setDomain(getDomain());
             }
-            executor.init();
+            executor.init(); // 调用父类LifeCycle的init方法，其实就是调用Executor的initInternal方法
         }
 
         // Initialize mapper listener
-        mapperListener.init();
+        mapperListener.init();  // 调用父类LifeCycle的init方法，其实就是调用MapperListener的init方法
 
         // Initialize our defined Connectors
         synchronized (connectorsLock) {
             for (Connector connector : connectors) {
                 try {
-                    connector.init();
+                    connector.init(); // 调用父类LifeCycle的init方法，其实就是调用Connector的initInternal方法
                 } catch (Exception e) {
                     String message = sm.getString(
                             "standardService.connector.initFailed", connector);

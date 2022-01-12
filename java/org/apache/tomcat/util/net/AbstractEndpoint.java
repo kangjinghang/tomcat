@@ -1136,7 +1136,7 @@ public abstract class AbstractEndpoint<S> {
             }
             Executor executor = getExecutor();
             if (dispatch && executor != null) {
-                executor.execute(sc);
+                executor.execute(sc); // 将连接SocketProcessorBase交给线程池来处理，由线程池调用sc的run方法
             } else {
                 sc.run();
             }

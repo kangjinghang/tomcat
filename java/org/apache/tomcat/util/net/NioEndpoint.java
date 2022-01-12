@@ -264,7 +264,7 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel> {
                 Thread pollerThread = new Thread(pollers[i], getName() + "-ClientPoller-"+i);
                 pollerThread.setPriority(threadPriority);
                 pollerThread.setDaemon(true);
-                pollerThread.start();
+                pollerThread.start(); // 开启Poller线程，处理selectionKey
             }
 
             startAcceptorThreads(); // 开启Acceptor线程
@@ -893,7 +893,7 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel> {
                     // Attachment may be null if another thread has called
                     // cancelledKey()
                     if (socketWrapper != null) {
-                        processKey(sk, socketWrapper);
+                        processKey(sk, socketWrapper); // 处理SelectionKey
                     }
                 }
 
@@ -917,12 +917,12 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel> {
                             boolean closeSocket = false;
                             // Read goes before write
                             if (sk.isReadable()) {
-                                if (!processSocket(attachment, SocketEvent.OPEN_READ, true)) {
+                                if (!processSocket(attachment, SocketEvent.OPEN_READ, true)) { // 处理读请求
                                     closeSocket = true;
                                 }
                             }
                             if (!closeSocket && sk.isWritable()) {
-                                if (!processSocket(attachment, SocketEvent.OPEN_WRITE, true)) {
+                                if (!processSocket(attachment, SocketEvent.OPEN_WRITE, true)) { // 处理写请求
                                     closeSocket = true;
                                 }
                             }
@@ -1617,7 +1617,7 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel> {
 
         @Override
         protected void doRun() {
-            NioChannel socket = socketWrapper.getSocket();
+            NioChannel socket = socketWrapper.getSocket(); // 获取nio对象
             SelectionKey key = socket.getIOChannel().keyFor(socket.getPoller().getSelector());
 
             try {
@@ -1660,7 +1660,7 @@ public class NioEndpoint extends AbstractJsseEndpoint<NioChannel> {
                     if (event == null) {
                         state = getHandler().process(socketWrapper, SocketEvent.OPEN_READ);
                     } else {
-                        state = getHandler().process(socketWrapper, event);
+                        state = getHandler().process(socketWrapper, event); // 处理请求
                     }
                     if (state == SocketState.CLOSED) {
                         close(socket, key);

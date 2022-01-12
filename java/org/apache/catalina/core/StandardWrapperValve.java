@@ -17,16 +17,6 @@
 package org.apache.catalina.core;
 
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.servlet.DispatcherType;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import javax.servlet.UnavailableException;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Globals;
@@ -40,6 +30,11 @@ import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.log.SystemLogHandler;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Valve that implements the default basic behavior for the
@@ -125,7 +120,7 @@ final class StandardWrapperValve extends ValveBase {
         // Allocate a servlet instance to process this request
         try {
             if (!unavailable) {
-                servlet = wrapper.allocate();
+                servlet = wrapper.allocate(); // 拿到servlet
             }
         } catch (UnavailableException e) {
             container.getLogger().error(
@@ -166,7 +161,7 @@ final class StandardWrapperValve extends ValveBase {
                 requestPathMB);
         // Create the filter chain for this request
         ApplicationFilterChain filterChain =
-                ApplicationFilterFactory.createFilterChain(request, wrapper, servlet);
+                ApplicationFilterFactory.createFilterChain(request, wrapper, servlet); // 执行过滤器链
 
         // Call the filter chain for this request
         // NOTE: This also calls the servlet's service() method

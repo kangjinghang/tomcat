@@ -16,14 +16,13 @@
  */
 package org.apache.catalina.core;
 
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
+
+import javax.servlet.ServletException;
+import java.io.IOException;
 
 /**
  * Valve that implements the default basic behavior for the
@@ -75,6 +74,6 @@ final class StandardEngineValve extends ValveBase {
         }
 
         // Ask this Host to process this request
-        host.getPipeline().getFirst().invoke(request, response);
+        host.getPipeline().getFirst().invoke(request, response); //  将request交给Engine的pipeline的第一个Valve（StandardHostValve）来处理
     }
 }

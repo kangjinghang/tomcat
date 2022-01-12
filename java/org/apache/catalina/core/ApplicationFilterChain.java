@@ -16,24 +16,18 @@
  */
 package org.apache.catalina.core;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.security.PrivilegedActionException;
-import java.util.Set;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.catalina.Globals;
 import org.apache.catalina.security.SecurityUtil;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.security.Principal;
+import java.security.PrivilegedActionException;
+import java.util.Set;
 
 /**
  * Implementation of <code>javax.servlet.FilterChain</code> used to manage
@@ -134,7 +128,7 @@ public final class ApplicationFilterChain implements FilterChain {
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response)
-        throws IOException, ServletException {
+        throws IOException, ServletException { // 执行过滤器
 
         if( Globals.IS_SECURITY_ENABLED ) {
             final ServletRequest req = request;
@@ -228,7 +222,7 @@ public final class ApplicationFilterChain implements FilterChain {
                                            args,
                                            principal);
             } else {
-                servlet.service(request, response);
+                servlet.service(request, response); // 执行HttpServlet的service方法
             }
         } catch (IOException | ServletException | RuntimeException e) {
             throw e;

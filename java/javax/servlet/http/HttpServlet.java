@@ -16,26 +16,13 @@
  */
 package javax.servlet.http;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
+import javax.servlet.*;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
-
-import javax.servlet.AsyncEvent;
-import javax.servlet.AsyncListener;
-import javax.servlet.DispatcherType;
-import javax.servlet.GenericServlet;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.WriteListener;
 
 /**
  * Provides an abstract class to be subclassed to create
@@ -652,7 +639,7 @@ public abstract class HttpServlet extends GenericServlet {
             if (lastModified == -1) {
                 // servlet doesn't support if-modified-since, no reason
                 // to go through further expensive logic
-                doGet(req, resp);
+                doGet(req, resp); // 执行doGet方法
             } else {
                 long ifModifiedSince;
                 try {
@@ -678,7 +665,7 @@ public abstract class HttpServlet extends GenericServlet {
             doHead(req, resp);
 
         } else if (method.equals(METHOD_POST)) {
-            doPost(req, resp);
+            doPost(req, resp); // 执行doPost方法
 
         } else if (method.equals(METHOD_PUT)) {
             doPut(req, resp);

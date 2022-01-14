@@ -329,11 +329,11 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
         service.setServer(this);
 
         synchronized (servicesLock) {
-            Service results[] = new Service[services.length + 1];
-            System.arraycopy(services, 0, results, 0, services.length);
+            Service results[] = new Service[services.length + 1]; // 创建一个长度 +1 的新数组
+            System.arraycopy(services, 0, results, 0, services.length); // 将老的数据复制过去
             results[services.length] = service;
             services = results;
-
+            // 启动 Service 组件
             if (getState().isAvailable()) {
                 try {
                     service.start();
@@ -342,7 +342,7 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
                 }
             }
 
-            // Report this property change to interested listeners
+            // Report this property change to interested listeners  触发监听事件
             support.firePropertyChange("service", null, service);
         }
 
@@ -399,7 +399,7 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
         }
 
         // Set up a server socket to wait on
-        try {
+        try { // 创建一个 Socket 监听 8005 端口
             awaitSocket = new ServerSocket(port, 1,
                     InetAddress.getByName(address));
         } catch (IOException e) {
@@ -426,7 +426,7 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
                     InputStream stream;
                     long acceptStartTime = System.currentTimeMillis();
                     try {
-                        socket = serverSocket.accept();
+                        socket = serverSocket.accept(); // 接收 Socket 上的连接请求
                         socket.setSoTimeout(10 * 1000);  // Ten seconds
                         stream = socket.getInputStream();
                     } catch (SocketTimeoutException ste) {
@@ -481,7 +481,7 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
                     }
                 }
 
-                // Match against our command string
+                // Match against our command string  如果读到的数据是停止命令“SHUTDOWN”，就退出循环，进入 stop 流程。
                 boolean match = command.toString().equals(shutdown);
                 if (match) {
                     log.info(sm.getString("standardServer.shutdownViaPort"));

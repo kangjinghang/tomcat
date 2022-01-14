@@ -17,11 +17,6 @@
 package org.apache.catalina.core;
 
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
@@ -33,6 +28,11 @@ import org.apache.tomcat.jni.LibraryNotFoundError;
 import org.apache.tomcat.jni.SSL;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -48,6 +48,7 @@ import org.apache.tomcat.util.res.StringManager;
  * code which is bootstrapping the embedded Tomcat instances. Not doing so will
  * lead to JVM crashes.
  *
+ * 用于加载（服务器启动） 和 销毁 （服务器停止） APR。 如果找不到APR库， 则会输出日志， 并不影响Tomcat启动
  * @since 4.1
  */
 public class AprLifecycleListener implements LifecycleListener {

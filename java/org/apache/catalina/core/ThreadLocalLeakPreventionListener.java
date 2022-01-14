@@ -16,25 +16,15 @@
  */
 package org.apache.catalina.core;
 
-import java.util.concurrent.Executor;
-
-import org.apache.catalina.Container;
-import org.apache.catalina.ContainerEvent;
-import org.apache.catalina.ContainerListener;
-import org.apache.catalina.Context;
-import org.apache.catalina.Engine;
-import org.apache.catalina.Host;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Server;
-import org.apache.catalina.Service;
+import org.apache.catalina.*;
 import org.apache.catalina.connector.Connector;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
+
+import java.util.concurrent.Executor;
 
 /**
  * A {@link LifecycleListener} that triggers the renewal of threads in Executor
@@ -46,6 +36,7 @@ import org.apache.tomcat.util.threads.ThreadPoolExecutor;
  * {@link org.apache.tomcat.util.threads.ThreadPoolExecutor}.afterExecute().
  * <p>
  * This listener must only be nested within {@link Server} elements.
+ * 用于在Context停止时重建Executor 池中的线程， 以避免ThreadLocal 相关的内存泄漏
  */
 public class ThreadLocalLeakPreventionListener implements LifecycleListener,
         ContainerListener {

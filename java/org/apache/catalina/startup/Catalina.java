@@ -669,9 +669,9 @@ public class Catalina {
     public void start() {
 
         if (getServer() == null) {
-            load();
+            load(); // 1.如果持有的 Server 实例为空，就解析 server.xml 创建出来
         }
-
+        // 2.如果创建失败，报错退出
         if (getServer() == null) {
             log.fatal("Cannot start server. Server instance is not configured.");
             return;
@@ -680,7 +680,7 @@ public class Catalina {
         long t1 = System.nanoTime();
 
         // Start the new server
-        try {
+        try { // 3.启动 Server
             getServer().start(); // 调用父类LifeCycle的start方法，其实就是调用Server的startInternal方法
         } catch (LifecycleException e) {
             log.fatal(sm.getString("catalina.serverStartFail"), e);
@@ -697,7 +697,7 @@ public class Catalina {
             log.info("Server startup in " + ((t2 - t1) / 1000000) + " ms");
         }
 
-        // Register shutdown hook
+        // Register shutdown hook 创建并注册关闭钩子
         if (useShutdownHook) {
             if (shutdownHook == null) {
                 shutdownHook = new CatalinaShutdownHook();
@@ -713,9 +713,9 @@ public class Catalina {
                         false);
             }
         }
-
+        // 用 await 方法监听停止请求
         if (await) {
-            await();
+            await(); // 如果读到的数据是停止命令“SHUTDOWN”，就退出循环，进入 stop 流程。
             stop();
         }
     }

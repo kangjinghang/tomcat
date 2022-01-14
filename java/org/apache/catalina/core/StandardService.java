@@ -49,13 +49,13 @@ public class StandardService extends LifecycleMBeanBase implements Service {
     // ----------------------------------------------------- Instance Variables
 
     /**
-     * The name of this service.
+     * The name of this service. 名字
      */
     private String name = null;
 
 
     /**
-     * The <code>Server</code> that owns this Service, if any.
+     * The <code>Server</code> that owns this Service, if any. Server 实例
      */
     private Server server = null;
 
@@ -66,7 +66,7 @@ public class StandardService extends LifecycleMBeanBase implements Service {
 
 
     /**
-     * The set of Connectors associated with this Service.
+     * The set of Connectors associated with this Service. 连接器数组
      */
     protected Connector connectors[] = new Connector[0];
     private final Object connectorsLock = new Object();
@@ -75,19 +75,19 @@ public class StandardService extends LifecycleMBeanBase implements Service {
      * The list of executors held by the service.
      */
     protected final ArrayList<Executor> executors = new ArrayList<>();
-
+    // 对应的 Engine 容器
     private Engine engine = null;
 
     private ClassLoader parentClassLoader = null;
 
     /**
-     * Mapper.
+     * Mapper. 映射器
      */
     protected final Mapper mapper = new Mapper();
 
 
     /**
-     * Mapper listener.
+     * Mapper listener. 监听器
      */
     protected final MapperListener mapperListener = new MapperListener(this);
 
@@ -405,10 +405,10 @@ public class StandardService extends LifecycleMBeanBase implements Service {
         if(log.isInfoEnabled()) {
             log.info(sm.getString("standardService.start.name", this.name));
         }
-        setState(LifecycleState.STARTING);
+        setState(LifecycleState.STARTING); // 1.触发启动监听器
 
         // Start our defined Container first
-        if (engine != null) {
+        if (engine != null) { // 2.先启动 Engine，Engine 会启动它子容器
             synchronized (engine) {
                 engine.start(); // 调用父类LifeCycle的start方法，其实就是调用Engine的startInternal方法
             }
@@ -419,9 +419,9 @@ public class StandardService extends LifecycleMBeanBase implements Service {
                 executor.start(); // 调用父类LifeCycle的start方法，其实就是调用Executor的startInternal方法
             }
         }
-
+        // 3.再启动 Mapper 监听器
         mapperListener.start(); // 调用父类LifeCycle的start方法，其实就是调用MapperListener的startInternal方法
-
+        // 4.最后启动连接器，连接器会启动它子组件，比如 Endpoint
         // Start our defined Connectors second
         synchronized (connectorsLock) {
             for (Connector connector: connectors) {

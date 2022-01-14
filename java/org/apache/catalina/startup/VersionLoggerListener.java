@@ -16,12 +16,6 @@
  */
 package org.apache.catalina.startup;
 
-import java.lang.management.ManagementFactory;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
@@ -31,11 +25,18 @@ import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.res.StringManager;
 
+import java.lang.management.ManagementFactory;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 /**
  * Logs version information on startup.
  * <p>
  * This listener must only be nested within {@link Server} elements and should
  * be the first listener defined.
+ * 用于以日志形式输出服务器 、操作系统、JVM的版本信息
  */
 public class VersionLoggerListener implements LifecycleListener {
 

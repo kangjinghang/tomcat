@@ -16,9 +16,6 @@
  */
 package org.apache.coyote.http11;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.Response;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -26,6 +23,9 @@ import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.HttpMessages;
 import org.apache.tomcat.util.net.SocketWrapperBase;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Provides buffering for the HTTP headers (allowing responses to be reset
@@ -143,8 +143,8 @@ public class Http11OutputBuffer implements HttpOutputBuffer {
             newFilterLibrary[i] = filterLibrary[i];
         }
         newFilterLibrary[filterLibrary.length] = filter;
-        filterLibrary = newFilterLibrary;
-
+        filterLibrary = newFilterLibrary; // filterLibrary数组表示可用的inputFilter
+        // activeFilters表示针对每一个特定请求要使用的inputFilter
         activeFilters = new OutputFilter[filterLibrary.length];
     }
 

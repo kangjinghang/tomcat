@@ -16,6 +16,8 @@
  */
 package org.apache.tomcat.util.buf;
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -23,8 +25,6 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
-import org.apache.tomcat.util.res.StringManager;
 
 /*
  * In a server it is very important to be able to operate on
@@ -285,26 +285,26 @@ public final class ByteChunk extends AbstractChunk {
      * @throws IOException Writing overflow data to the output channel failed
      */
     public void append(byte src[], int off, int len) throws IOException {
-        // will grow, up to limit
-        makeSpace(len);
-        int limit = getLimitInternal();
+        // will grow, up to limit  向缓冲区添加数据，需要开启缓冲区空间，缓冲区初始化大小为256，最大大小可以设置，默认为8192
+        makeSpace(len); // 意思是现在想要缓冲区存放数据，首先得去开辟空间，但是空间是有一个最大限制的，所以要存放的数据可能小于限制，也可能大于限制
+        int limit = getLimitInternal(); // 缓冲区大小的最大限制
 
         // Optimize on a common case.
         // If the buffer is empty and the source is going to fill up all the
         // space in buffer, may as well write it directly to the output,
         // and avoid an extra copy
-        if (len == limit && end == start && out != null) {
+        if (len == limit && end == start && out != null) { // 如果要添加到缓冲区的数据大小正好等于最大限制，并且缓冲区是空的，那么则直接把数据发送给out，不要存在缓冲区了
             out.realWriteBytes(src, off, len);
             return;
         }
 
         // if we are below the limit
-        if (len <= limit - end) {
+        if (len <= limit - end) { // 如果要发送的数据长度小于缓冲区中剩余空间，则把数据填充到剩余空间
             System.arraycopy(src, off, buff, end, len);
             end += len;
             return;
         }
-
+        // 如果要发送的数据长度 大于 缓冲区中剩余空间
         // Need more space than we can afford, need to flush buffer.
 
         // The buffer is already at (or bigger than) limit.
@@ -312,19 +312,19 @@ public final class ByteChunk extends AbstractChunk {
         // We chunk the data into slices fitting in the buffer limit, although
         // if the data is written directly if it doesn't fit.
 
-        int avail = limit - end;
-        System.arraycopy(src, off, buff, end, avail);
+        int avail = limit - end; // 缓冲区中还能容纳avail个字节数据
+        System.arraycopy(src, off, buff, end, avail); // 先将一部分数据复制到buffer，填满缓冲区
         end += avail;
 
-        flushBuffer();
+        flushBuffer(); // 将缓冲区的数据发送出去
 
-        int remain = len - avail;
+        int remain = len - avail; // 还剩下一部分数据没有放到缓冲区的
 
-        while (remain > (limit - end)) {
+        while (remain > (limit - end)) { // 如果剩下的数据仍然 超过 缓冲区剩余大小，那么就把数据直接发送出去（每次发送缓冲区剩余大小的数据）
             out.realWriteBytes(src, (off + len) - remain, limit - end);
             remain = remain - (limit - end);
         }
-
+        // 直到最后剩下的数据能放入到缓冲区，那么就放进缓冲区
         System.arraycopy(src, (off + len) - remain, buff, end, remain);
         end += remain;
     }
@@ -410,14 +410,14 @@ public final class ByteChunk extends AbstractChunk {
 
 
     public int substract(byte dest[], int off, int len) throws IOException {
-        if (checkEof()) {
+        if (checkEof()) { // 这里会对当前ByteChunk初始化
             return -1;
         }
         int n = len;
-        if (len > getLength()) {
+        if (len > getLength()) { // 如果需要的数据超过buff中标记的数据长度
             n = getLength();
         }
-        System.arraycopy(buff, start, dest, off, n);
+        System.arraycopy(buff, start, dest, off, n); // 将buff数组中从start开始的数据，复制到dest中，长度为n，desc数组中就有值了
         start += n;
         return n;
     }
@@ -449,10 +449,10 @@ public final class ByteChunk extends AbstractChunk {
 
     private boolean checkEof() throws IOException {
         if ((end - start) == 0) {
-            if (in == null) {
+            if (in == null) { // 如果byteChunk没有标记数据了，则开始比较
                 return true;
             }
-            int n = in.realReadBytes();
+            int n = in.realReadBytes(); // 从in中读取buff长度大小的数据，读到buff中，真实读到的数据为n
             if (n < 0) {
                 return true;
             }
@@ -501,7 +501,7 @@ public final class ByteChunk extends AbstractChunk {
             if (desiredSize < 256) {
                 desiredSize = 256; // take a minimum
             }
-            buff = new byte[(int) desiredSize];
+            buff = new byte[(int) desiredSize]; // 初始化256个字节的缓冲区
         }
 
         // limit < buf.length (the buffer is already big)

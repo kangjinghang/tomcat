@@ -164,7 +164,7 @@ public class Http11Processor extends AbstractProcessor {
     public Http11Processor(AbstractHttp11Protocol<?> protocol, AbstractEndpoint<?> endpoint) {
         super(endpoint);
         this.protocol = protocol;
-
+        // http协议解析器
         httpParser = new HttpParser(protocol.getRelaxedPathChars(),
                 protocol.getRelaxedQueryChars());
 
@@ -175,7 +175,8 @@ public class Http11Processor extends AbstractProcessor {
         outputBuffer = new Http11OutputBuffer(response, protocol.getMaxHttpHeaderSize(),
                 protocol.getSendReasonPhrase());
         response.setOutputBuffer(outputBuffer);
-
+        // Http 包含 content-length 头部并且指定长度大于 0 的时候使用
+        // 它将根据指定的长度从底层读取响应长度的字节数组，当读取足够数据后，将直接返回-1，避免再次执行底层操作
         // Create and add the identity filters.
         inputBuffer.addFilter(new IdentityInputFilter(protocol.getMaxSwallowSize()));
         outputBuffer.addFilter(new IdentityOutputFilter());
@@ -482,11 +483,11 @@ public class Http11Processor extends AbstractProcessor {
         readComplete = true;
         boolean keptAlive = false;
         SendfileState sendfileState = SendfileState.DONE;
-
+        // keepAlive默认为true，它的值会从请求中读取，设置为true的话，会不断从socket中读数据，直到状态为SendfileState.DONE
         while (!getErrorState().isError() && keepAlive && !isAsync() && upgradeToken == null &&
                 sendfileState == SendfileState.DONE && !endpoint.isPaused()) {
 
-            // Parsing the request header
+            // Parsing the request header 解析请求行
             try {
                 if (!inputBuffer.parseRequestLine(keptAlive)) {
                     if (inputBuffer.getParsingRequestLinePhase() == -1) {
@@ -502,15 +503,15 @@ public class Http11Processor extends AbstractProcessor {
                 prepareRequestProtocol();
 
                 if (endpoint.isPaused()) {
-                    // 503 - Service unavailable
+                    // 503 - Service unavailable 如果endpoint被暂停了，返回503
                     response.setStatus(503);
                     setErrorState(ErrorState.CLOSE_CLEAN, null);
                 } else {
                     keptAlive = true;
                     // Set this every time in case limit has been changed via JMX
-                    request.getMimeHeaders().setLimit(endpoint.getMaxHeaderCount());
+                    request.getMimeHeaders().setLimit(endpoint.getMaxHeaderCount()); // 每处理一次请求就重新获取一下请求头和cookies的最大限制
                     // Don't parse headers for HTTP/0.9
-                    if (!http09 && !inputBuffer.parseHeaders()) {
+                    if (!http09 && !inputBuffer.parseHeaders()) { // 处理请求头
                         // We've read part of the request, don't recycle it
                         // instead associate it with the socket
                         openSocket = true;
@@ -591,7 +592,7 @@ public class Http11Processor extends AbstractProcessor {
                 // Setting up filters, and parse some request headers
                 rp.setStage(org.apache.coyote.Constants.STAGE_PREPARE);
                 try {
-                    prepareRequest();
+                    prepareRequest(); // 预处理，主要从请求中处理keepAlive属性(Connection:keep-alive)，及进行一些验证，以及根据请求分析得到ActiveInput
                 } catch (Throwable t) {
                     ExceptionUtils.handleThrowable(t);
                     if (log.isDebugEnabled()) {
@@ -602,18 +603,19 @@ public class Http11Processor extends AbstractProcessor {
                     setErrorState(ErrorState.CLOSE_CLEAN, t);
                 }
             }
-
+// 就是一个socket能被多少个http请求共同使用，比如设置为2，那么第一次请求头设置为Connection=keep-alive，正常返回，然后第二个请求继续设置为Connection=keep-alive，
+// 但是第二次response里设置Connection=close，因为一个socket只能被两个http请求同时使用呀，所以这时就要关闭socket了
             if (maxKeepAliveRequests == 1) {
-                keepAlive = false;
+                keepAlive = false; // 如果最大的活跃http请求数量仅仅为1的话，那么设置keepAlive为false，则不会继续从socket中读取Http请求了
             } else if (maxKeepAliveRequests > 0 &&
                     socketWrapper.decrementKeepAlive() <= 0) {
-                keepAlive = false;
+                keepAlive = false; // 如果已经达到了keepAlive的最大限制，也设置为false，则不会继续从socket中读取Http请求了
             }
 
             // Process the request in the adapter
             if (getErrorState().isIoAllowed()) {
                 try {
-                    rp.setStage(org.apache.coyote.Constants.STAGE_SERVICE);
+                    rp.setStage(org.apache.coyote.Constants.STAGE_SERVICE); // 设置请求状态为服务状态，表示正在处理请求
                     getAdapter().service(request, response); // 调用CoyoteAdapter的service方法
                     // Handle when the response was committed before a serious
                     // error occurred.  Throwing a ServletException should both
@@ -649,14 +651,14 @@ public class Http11Processor extends AbstractProcessor {
             }
 
             // Finish the handling of the request
-            rp.setStage(org.apache.coyote.Constants.STAGE_ENDINPUT);
+            rp.setStage(org.apache.coyote.Constants.STAGE_ENDINPUT);  // 设置请求状态为处理请求结束
             if (!isAsync()) {
                 // If this is an async request then the request ends when it has
                 // been completed. The AsyncContext is responsible for calling
                 // endRequest() in that case.
-                endRequest();
+                endRequest(); //
             }
-            rp.setStage(org.apache.coyote.Constants.STAGE_ENDOUTPUT);
+            rp.setStage(org.apache.coyote.Constants.STAGE_ENDOUTPUT); // 设置请求状态为输出结束
 
             // If there was an error, make sure the request is counted as
             // and error, and update the statistics counter
@@ -862,9 +864,9 @@ public class Http11Processor extends AbstractProcessor {
         if (connectionValueMB != null && !connectionValueMB.isNull()) {
             Set<String> tokens = new HashSet<>();
             TokenList.parseTokenList(headers.values(Constants.CONNECTION), tokens);
-            if (tokens.contains(Constants.CLOSE)) {
+            if (tokens.contains(Constants.CLOSE)) { // 根据Connection=close，设置keepAlive为false
                 keepAlive = false;
-            } else if (tokens.contains(Constants.KEEP_ALIVE_HEADER_VALUE_TOKEN)) {
+            } else if (tokens.contains(Constants.KEEP_ALIVE_HEADER_VALUE_TOKEN)) { // 根据Connection=keep-alive，设置keepAlive为true，表示长连接
                 keepAlive = true;
             }
         }
@@ -873,7 +875,7 @@ public class Http11Processor extends AbstractProcessor {
             prepareExpectation(headers);
         }
 
-        // Check user-agent header
+        // Check user-agent header 请求本来是http1.1或者keepAlive的，如果请求中所指定的user-agent被限制了，不支持长连接，则http11=false，keepAlive=false
         if (restrictedUserAgents != null && (http11 || keepAlive)) {
             MessageBytes userAgentValueMB = headers.getValue("user-agent");
             // Check in the restricted list, and adjust the http11
@@ -892,7 +894,7 @@ public class Http11Processor extends AbstractProcessor {
         // Check host header
         MessageBytes hostValueMB = null;
         try {
-            hostValueMB = headers.getUniqueValue("host");
+            hostValueMB = headers.getUniqueValue("host"); // 获取唯一的host，请求头中不能有多个key为host
         } catch (IllegalArgumentException iae) {
             // Multiple Host headers are not permitted
             badRequest("http11processor.request.multipleHosts");
@@ -903,7 +905,7 @@ public class Http11Processor extends AbstractProcessor {
 
         // Check for an absolute-URI less the query string which has already
         // been removed during the parsing of the request line
-        ByteChunk uriBC = request.requestURI().getByteChunk();
+        ByteChunk uriBC = request.requestURI().getByteChunk(); // URI格式：[协议名]://[用户名]:[密码]@[服务器地址]:[服务器端口号]:/路径?[查询字符串]#[片段ID]
         byte[] uriB = uriBC.getBytes();
         if (uriBC.startsWithIgnoreCase("http", 0)) {
             int pos = 4;
@@ -938,7 +940,7 @@ public class Http11Processor extends AbstractProcessor {
                 }
 
                 // Skip any user info
-                if (atPos != -1) {
+                if (atPos != -1) { // 校验用户信息格式是否正确
                     // Validate the userinfo
                     for (; pos < atPos; pos++) {
                         byte c = uriB[uriBCStart + pos];
@@ -959,7 +961,7 @@ public class Http11Processor extends AbstractProcessor {
                     if (hostValueMB != null) {
                         // Any host in the request line must be consistent with
                         // the Host header
-                        if (!hostValueMB.getByteChunk().equals(
+                        if (!hostValueMB.getByteChunk().equals( // URI中的主机名和header中是否一致，如果不一致，如果允许修改header中的host为uri中的host，则修改
                                 uriB, uriBCStart + pos, slashPos - pos)) {
                             if (protocol.getAllowHostHeaderMismatch()) {
                                 // The requirements of RFC 2616 are being
@@ -1008,7 +1010,7 @@ public class Http11Processor extends AbstractProcessor {
         prepareInputFilters(headers);
 
         // Validate host name and extract port if present
-        parseHost(hostValueMB);
+        parseHost(hostValueMB); // 解析hostname和port
 
         if (!getErrorState().isIoAllowed()) {
             getAdapter().log(request, response, 0);
@@ -1032,9 +1034,9 @@ public class Http11Processor extends AbstractProcessor {
     private void prepareInputFilters(MimeHeaders headers) throws IOException {
 
         contentDelimitation = false;
-
+        // 获取处理请求体的Tomcat默认的InputFilter，默认4个input的
         InputFilter[] inputFilters = inputBuffer.getFilters();
-
+        // 每个inputFilter都有一个ENCODING_NAME
         // Parse transfer-encoding header
         // HTTP specs say an HTTP 1.1 server should accept any recognised
         // HTTP 1.x header from a 1.x client unless the specs says otherwise.
@@ -1044,7 +1046,7 @@ public class Http11Processor extends AbstractProcessor {
                 List<String> encodingNames = new ArrayList<>();
                 if (TokenList.parseTokenList(headers.values("transfer-encoding"), encodingNames)) {
                     for (String encodingName : encodingNames) {
-                        addInputFilter(inputFilters, encodingName);
+                        addInputFilter(inputFilters, encodingName); // transfer-encoding==chunked的时候，contentDelimitation 设置为true，表示分块传输，所以contentLength没用
                     }
                 } else {
                     // Invalid transfer encoding
@@ -1063,7 +1065,7 @@ public class Http11Processor extends AbstractProcessor {
             badRequest("http11processor.request.multipleContentLength");
         }
         if (contentLength >= 0) {
-            if (contentDelimitation) {
+            if (contentDelimitation) { // transfer-encoding==chunked的时候，contentDelimitation 设置为true，表示分块传输，所以contentLength没用
                 // contentDelimitation being true at this point indicates that
                 // chunked encoding is being used but chunked encoding should
                 // not be used with a content length. RFC 2616, section 4.4,
@@ -1072,13 +1074,13 @@ public class Http11Processor extends AbstractProcessor {
                 headers.removeHeader("content-length");
                 request.setContentLength(-1);
                 keepAlive = false;
-            } else {
+            } else { // 利用IDENTITY_FILTER处理请求体
                 inputBuffer.addActiveFilter(inputFilters[Constants.IDENTITY_FILTER]);
                 contentDelimitation = true;
             }
         }
 
-        if (!contentDelimitation) {
+        if (!contentDelimitation) {  // 如果既没有content-length请求头，也没有transfer-encoding请求头，添加一个VOID_FILTER进行请求体处理，其实就是不处理请求体
             // If there's no content length
             // (broken HTTP/1.0 or HTTP/1.1), assume
             // the client is not broken and didn't send a body
@@ -1118,7 +1120,7 @@ public class Http11Processor extends AbstractProcessor {
 
         int statusCode = response.getStatus();
         if (statusCode < 200 || statusCode == 204 || statusCode == 205 ||
-                statusCode == 304) {
+                statusCode == 304) { // 如果是这些状态，则不发送响应体
             // No entity body
             outputBuffer.addActiveFilter
                 (outputFilters[Constants.VOID_FILTER]);
@@ -1134,7 +1136,7 @@ public class Http11Processor extends AbstractProcessor {
         }
 
         MessageBytes methodMB = request.method();
-        if (methodMB.equals("HEAD")) {
+        if (methodMB.equals("HEAD")) { // 如果请求方法是HEAD，也不发送响应体
             // No entity body
             outputBuffer.addActiveFilter
                 (outputFilters[Constants.VOID_FILTER]);
@@ -1168,7 +1170,7 @@ public class Http11Processor extends AbstractProcessor {
 
         long contentLength = response.getContentLengthLong();
         boolean connectionClosePresent = isConnectionToken(headers, Constants.CLOSE);
-        if (contentLength != -1) {
+        if (contentLength != -1) { // 如果response中有content-length，则通过IDENTITY_FILTER发送
             headers.setValue("Content-Length").setLong(contentLength);
             outputBuffer.addActiveFilter(outputFilters[Constants.IDENTITY_FILTER]);
             contentDelimitation = true;
@@ -1176,7 +1178,7 @@ public class Http11Processor extends AbstractProcessor {
             // If the response code supports an entity body and we're on
             // HTTP 1.1 then we chunk unless we have a Connection: close header
             if (http11 && entityBody && !connectionClosePresent) {
-                outputBuffer.addActiveFilter(outputFilters[Constants.CHUNKED_FILTER]);
+                outputBuffer.addActiveFilter(outputFilters[Constants.CHUNKED_FILTER]); // 否则使用CHUNKED_FILTER发送
                 contentDelimitation = true;
                 headers.addValue(Constants.TRANSFERENCODING).setString(Constants.CHUNKED);
             } else {
@@ -1222,7 +1224,7 @@ public class Http11Processor extends AbstractProcessor {
         }
         if (!keepAlive) {
             // Avoid adding the close header twice
-            if (!connectionClosePresent) {
+            if (!connectionClosePresent) { // socket不再活跃了，会关闭socket
                 headers.addValue(Constants.CONNECTION).setString(
                         Constants.CLOSE);
             }
@@ -1259,7 +1261,7 @@ public class Http11Processor extends AbstractProcessor {
         }
 
         // Add server header
-        String server = protocol.getServer();
+        String server = protocol.getServer(); // 设置响应头中的header
         if (server == null) {
             if (protocol.getServerRemoveAppProvidedValues()) {
                 headers.removeHeader("server");
@@ -1271,7 +1273,7 @@ public class Http11Processor extends AbstractProcessor {
 
         // Build the response header
         try {
-            outputBuffer.sendStatus();
+            outputBuffer.sendStatus(); // 先发送协议状态，比如HTTP/1.1 200 OK
 
             int size = headers.size();
             for (int i = 0; i < size; i++) {
@@ -1579,7 +1581,7 @@ public class Http11Processor extends AbstractProcessor {
     private SendfileState processSendfile(SocketWrapperBase<?> socketWrapper) {
         openSocket = keepAlive;
         // Done is equivalent to sendfile not being used
-        SendfileState result = SendfileState.DONE;
+        SendfileState result = SendfileState.DONE; // 表示处理结束
         // Do sendfile as needed: add socket to sendfile and end
         if (sendfileData != null && !getErrorState().isError()) {
             if (keepAlive) {

@@ -16,12 +16,12 @@
  */
 package org.apache.tomcat.util.threads;
 
+import org.apache.tomcat.util.res.StringManager;
+
 import java.util.Collection;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * As task queue specifically designed to run with a thread pool executor. The
@@ -106,19 +106,19 @@ public class TaskQueue extends LinkedBlockingQueue<Runnable> {
             return super.offer(o);
         }
         //we are maxed out on threads, simply queue the object
-        if (parent.getPoolSize() == parent.getMaximumPoolSize()) {
+        if (parent.getPoolSize() == parent.getMaximumPoolSize()) { // 如果线程数已经到了最大值，不能创建新线程了，只能把任务添加到任务队列。
             return super.offer(o);
-        }
+        } // 执行到这里，表明当前线程数大于核心线程数，并且小于最大线程数。表明是可以创建新线程的，那到底要不要创建呢？分两种情况：
         //we have idle threads, just add it to the queue
-        if (parent.getSubmittedCount()<=(parent.getPoolSize())) {
+        if (parent.getSubmittedCount()<=(parent.getPoolSize())) { //1. 如果已提交的任务数小于当前线程数，表示还有空闲线程，无需创建新线程
             return super.offer(o);
         }
         //if we have less threads than maximum force creation of a new thread
-        if (parent.getPoolSize()<parent.getMaximumPoolSize()) {
+        if (parent.getPoolSize()<parent.getMaximumPoolSize()) { //2. 如果已提交的任务数大于当前线程数，线程不够用了，返回 false 去创建新线程
             return false;
         }
         //if we reached here, we need to add it to the queue
-        return super.offer(o);
+        return super.offer(o); // 默认情况下总是把任务添加到任务队列
     }
 
 

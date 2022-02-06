@@ -750,7 +750,7 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
 
             S socket = wrapper.getSocket();
 
-            Processor processor = connections.get(socket); // 拿到Processor，用来转化成应用层对象
+            Processor processor = connections.get(socket); // 拿到Processor，比如Http11Processor，用来转化成应用层对象
             if (getLog().isDebugEnabled()) {
                 getLog().debug(sm.getString("abstractConnectionHandler.connectionsGet",
                         processor, socket));
@@ -825,8 +825,8 @@ public abstract class AbstractProtocol<S> implements ProtocolHandler,
                     }
                 }
                 if (processor == null) {
-                    processor = getProtocol().createProcessor();
-                    register(processor);
+                    processor = getProtocol().createProcessor(); // 如果没有的话就创建一个，比如Http11Processor
+                    register(processor); // 注册processor
                     if (getLog().isDebugEnabled()) {
                         getLog().debug(sm.getString("abstractConnectionHandler.processorCreate", processor));
                     }

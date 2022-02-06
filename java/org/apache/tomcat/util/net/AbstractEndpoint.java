@@ -929,11 +929,11 @@ public abstract class AbstractEndpoint<S> {
         return paused;
     }
 
-
+    // 这里创建默认的connector使用的线程池
     public void createExecutor() {
         internalExecutor = true;
         TaskQueue taskqueue = new TaskQueue();
-        TaskThreadFactory tf = new TaskThreadFactory(getName() + "-exec-", daemon, getThreadPriority());
+        TaskThreadFactory tf = new TaskThreadFactory(getName() + "-exec-", daemon, getThreadPriority()); // getName() 就是http-8080-nio
         executor = new ThreadPoolExecutor(getMinSpareThreads(), getMaxThreads(), 60, TimeUnit.SECONDS,taskqueue, tf);
         taskqueue.setParent( (ThreadPoolExecutor) executor);
     }
@@ -1352,7 +1352,7 @@ public abstract class AbstractEndpoint<S> {
         }
         LimitLatch latch = connectionLimitLatch;
         if (latch!=null) {
-            long result = latch.countDown();
+            long result = latch.countDown(); // 调用这个方法来释放一个连接许可，那么前面阻塞的线程可能被唤醒
             if (result<0) {
                 getLog().warn(sm.getString("endpoint.warn.incorrectConnectionCount"));
             }

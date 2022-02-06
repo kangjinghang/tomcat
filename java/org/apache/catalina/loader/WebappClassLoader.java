@@ -17,7 +17,7 @@
 package org.apache.catalina.loader;
 
 import org.apache.catalina.LifecycleException;
-
+// Tomcat 的自定义类加载器 WebAppClassLoader 打破了双亲委托机制
 public class WebappClassLoader extends WebappClassLoaderBase {
 
     public WebappClassLoader() {

@@ -1116,7 +1116,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase implements Contai
         if (!getState().isAvailable()) {
             return;
         }
-
+        // 1.执行容器中 Cluster 组件的周期性任务
         Cluster cluster = getClusterInternal();
         if (cluster != null) {
             try {
@@ -1126,7 +1126,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase implements Contai
                         cluster), e);
             }
         }
-        Realm realm = getRealmInternal();
+        Realm realm = getRealmInternal(); // 2.执行容器中 Realm 组件的周期性任务
         if (realm != null) {
             try {
                 realm.backgroundProcess();
@@ -1134,7 +1134,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase implements Contai
                 log.warn(sm.getString("containerBase.backgroundProcess.realm", realm), e);
             }
         }
-        Valve current = pipeline.getFirst();
+        Valve current = pipeline.getFirst(); // 3.执行容器中 Valve 组件的周期性任务
         while (current != null) {
             try {
                 current.backgroundProcess();
@@ -1143,7 +1143,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase implements Contai
             }
             current = current.getNext();
         }
-        fireLifecycleEvent(Lifecycle.PERIODIC_EVENT, null);
+        fireLifecycleEvent(Lifecycle.PERIODIC_EVENT, null); // 4.触发容器的 " 周期事件 "，Host 容器的监听器 HostConfig 就靠它来调用
     }
 
 
@@ -1341,7 +1341,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase implements Contai
                         // Ignore
                     }
                     if (!threadDone) {
-                        processChildren(ContainerBase.this);
+                        processChildren(ContainerBase.this); // 请注意这里传入的参数是 " 宿主类 " 的实例
                     }
                 }
             } catch (RuntimeException|Error e) {
@@ -1369,10 +1369,10 @@ public abstract class ContainerBase extends LifecycleMBeanBase implements Contai
                     // is performed under the web app's class loader
                     originalClassLoader = ((Context) container).bind(false, null);
                 }
-                container.backgroundProcess();
+                container.backgroundProcess(); // 1.调用当前容器的 backgroundProcess 方法。
                 Container[] children = container.findChildren();
-                for (Container child : children) {
-                    if (child.getBackgroundProcessorDelay() <= 0) {
+                for (Container child : children) { // 2.遍历所有的子容器，递归调用 processChildren，这样当前容器的子孙都会被处理
+                    if (child.getBackgroundProcessorDelay() <= 0) { // 注意，容器基类有个变量叫做 backgroundProcessorDelay，如果大于 0，表明子容器有自己的后台线程，无需父容器来调用它的 processChildren 方法。
                         processChildren(child);
                     }
                 }

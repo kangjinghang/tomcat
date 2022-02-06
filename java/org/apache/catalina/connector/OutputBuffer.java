@@ -16,6 +16,16 @@
  */
 package org.apache.catalina.connector;
 
+import org.apache.catalina.Globals;
+import org.apache.coyote.ActionCode;
+import org.apache.coyote.CloseNowException;
+import org.apache.coyote.Response;
+import org.apache.tomcat.util.buf.B2CConverter;
+import org.apache.tomcat.util.buf.C2BConverter;
+import org.apache.tomcat.util.res.StringManager;
+
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.Buffer;
@@ -27,17 +37,6 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.catalina.Globals;
-import org.apache.coyote.ActionCode;
-import org.apache.coyote.CloseNowException;
-import org.apache.coyote.Response;
-import org.apache.tomcat.util.buf.B2CConverter;
-import org.apache.tomcat.util.buf.C2BConverter;
-import org.apache.tomcat.util.res.StringManager;
 
 /**
  * The buffer used by Tomcat response. This is a derivative of the Tomcat 3.3
@@ -307,14 +306,14 @@ public class OutputBuffer extends Writer {
         try {
             doFlush = true;
             if (initial) {
-                coyoteResponse.sendHeaders();
+                coyoteResponse.sendHeaders(); // 先发送请求头，再发送请求体
                 initial = false;
             }
             if (cb.remaining() > 0) {
                 flushCharBuffer();
             }
             if (bb.remaining() > 0) {
-                flushByteBuffer();
+                flushByteBuffer(); // 这是只是把上层缓冲区的数据发送到底层缓冲区中，所以数据到底会不会发送给socket并不确定
             }
         } finally {
             doFlush = false;
@@ -374,7 +373,7 @@ public class OutputBuffer extends Writer {
 
     }
 
-
+    // 写出
     public void write(byte b[], int off, int len) throws IOException {
 
         if (suspended) {
@@ -403,7 +402,7 @@ public class OutputBuffer extends Writer {
             return;
         }
 
-        append(b, off, len);
+        append(b, off, len); // 将数据先写入到ByteChunk的缓冲区中，如果缓冲区满了，可能会把数据发送出去
         bytesWritten += len;
 
         // if called from within flush(), then immediately flush
@@ -812,7 +811,7 @@ public class OutputBuffer extends Writer {
 
         int limit = bb.capacity();
         while (len > limit) {
-            realWriteBytes(ByteBuffer.wrap(src, off, limit));
+            realWriteBytes(ByteBuffer.wrap(src, off, limit)); // 真正的写出去
             len = len - limit;
             off = off + limit;
         }

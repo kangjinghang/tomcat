@@ -16,98 +16,12 @@
  */
 package org.apache.catalina.core;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Stack;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import javax.management.ListenerNotFoundException;
-import javax.management.MBeanNotificationInfo;
-import javax.management.Notification;
-import javax.management.NotificationBroadcasterSupport;
-import javax.management.NotificationEmitter;
-import javax.management.NotificationFilter;
-import javax.management.NotificationListener;
-import javax.naming.NamingException;
-import javax.servlet.Filter;
-import javax.servlet.FilterConfig;
-import javax.servlet.FilterRegistration;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.Servlet;
-import javax.servlet.ServletContainerInitializer;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextAttributeListener;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRegistration;
-import javax.servlet.ServletRegistration.Dynamic;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletRequestAttributeListener;
-import javax.servlet.ServletRequestEvent;
-import javax.servlet.ServletRequestListener;
-import javax.servlet.ServletSecurityElement;
-import javax.servlet.SessionCookieConfig;
-import javax.servlet.SessionTrackingMode;
-import javax.servlet.descriptor.JspConfigDescriptor;
-import javax.servlet.http.HttpSessionAttributeListener;
-import javax.servlet.http.HttpSessionIdListener;
-import javax.servlet.http.HttpSessionListener;
-
-import org.apache.catalina.Authenticator;
-import org.apache.catalina.Container;
-import org.apache.catalina.ContainerListener;
-import org.apache.catalina.Context;
-import org.apache.catalina.CredentialHandler;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Loader;
-import org.apache.catalina.Manager;
-import org.apache.catalina.Pipeline;
-import org.apache.catalina.Realm;
-import org.apache.catalina.ThreadBindingListener;
-import org.apache.catalina.Valve;
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot;
-import org.apache.catalina.Wrapper;
+import org.apache.catalina.*;
 import org.apache.catalina.deploy.NamingResourcesImpl;
 import org.apache.catalina.loader.WebappClassLoaderBase;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.session.StandardManager;
-import org.apache.catalina.util.CharsetMapper;
-import org.apache.catalina.util.ContextName;
-import org.apache.catalina.util.ErrorPageSupport;
-import org.apache.catalina.util.ExtensionValidator;
-import org.apache.catalina.util.URLEncoder;
+import org.apache.catalina.util.*;
 import org.apache.catalina.webresources.StandardRoot;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
@@ -119,22 +33,38 @@ import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.buf.StringUtils;
 import org.apache.tomcat.util.buf.UDecoder;
 import org.apache.tomcat.util.descriptor.XmlIdentifiers;
-import org.apache.tomcat.util.descriptor.web.ApplicationParameter;
-import org.apache.tomcat.util.descriptor.web.ErrorPage;
-import org.apache.tomcat.util.descriptor.web.FilterDef;
-import org.apache.tomcat.util.descriptor.web.FilterMap;
-import org.apache.tomcat.util.descriptor.web.Injectable;
-import org.apache.tomcat.util.descriptor.web.InjectionTarget;
-import org.apache.tomcat.util.descriptor.web.LoginConfig;
-import org.apache.tomcat.util.descriptor.web.MessageDestination;
-import org.apache.tomcat.util.descriptor.web.MessageDestinationRef;
-import org.apache.tomcat.util.descriptor.web.SecurityCollection;
-import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
+import org.apache.tomcat.util.descriptor.web.*;
 import org.apache.tomcat.util.http.CookieProcessor;
 import org.apache.tomcat.util.http.Rfc6265CookieProcessor;
 import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.apache.tomcat.util.security.PrivilegedGetTccl;
 import org.apache.tomcat.util.security.PrivilegedSetTccl;
+
+import javax.management.*;
+import javax.naming.NamingException;
+import javax.servlet.*;
+import javax.servlet.ServletRegistration.Dynamic;
+import javax.servlet.descriptor.JspConfigDescriptor;
+import javax.servlet.http.HttpSessionAttributeListener;
+import javax.servlet.http.HttpSessionIdListener;
+import javax.servlet.http.HttpSessionListener;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Standard implementation of the <b>Context</b> interface.  Each
@@ -223,7 +153,7 @@ public class StandardContext extends ContainerBase
      * SCIs and other code may use the pluggability APIs to add listener
      * instances directly to this list before the application starts.
      */
-    private List<Object> applicationEventListenersList = new CopyOnWriteArrayList<>();
+    private List<Object> applicationEventListenersList = new CopyOnWriteArrayList<>(); // 监听属性值变化的监听器
 
 
     /**
@@ -232,7 +162,7 @@ public class StandardContext extends ContainerBase
      * instances directly to this list before the application starts.
      */
     private Object applicationLifecycleListenersObjects[] =
-        new Object[0];
+        new Object[0]; // 监听生命事件的监听器
 
 
     /**
@@ -4739,7 +4669,7 @@ public class StandardContext extends ContainerBase
         getServletContext();
         context.setNewServletContextListenerAllowed(false);
 
-        Object instances[] = getApplicationLifecycleListeners();
+        Object instances[] = getApplicationLifecycleListeners(); // 1.拿到所有的生命周期监听器
         if (instances == null || instances.length == 0) {
             return ok;
         }
@@ -4751,7 +4681,7 @@ public class StandardContext extends ContainerBase
             tldEvent = new ServletContextEvent(noPluggabilityServletContext);
         }
         for (Object instance : instances) {
-            if (!(instance instanceof ServletContextListener)) {
+            if (!(instance instanceof ServletContextListener)) { // 2.判断 Listener 的类型是不是 ServletContextListener
                 continue;
             }
             ServletContextListener listener = (ServletContextListener) instance;
@@ -4760,7 +4690,7 @@ public class StandardContext extends ContainerBase
                 if (noPluggabilityListeners.contains(listener)) {
                     listener.contextInitialized(tldEvent);
                 } else {
-                    listener.contextInitialized(event);
+                    listener.contextInitialized(event); // 3.触发 Listener 的方法
                 }
                 fireContainerEvent("afterContextInitialized", listener);
             } catch (Throwable t) {
@@ -5596,7 +5526,7 @@ public class StandardContext extends ContainerBase
         if (!getState().isAvailable()) {
             return;
         }
-
+        // WebappLoader 周期性的检查 WEB-INF/classes 和 WEB-INF/lib 目录下的类文件
         Loader loader = getLoader();
         if (loader != null) {
             try {
@@ -5606,7 +5536,7 @@ public class StandardContext extends ContainerBase
                         "standardContext.backgroundProcess.loader", loader), e);
             }
         }
-        Manager manager = getManager();
+        Manager manager = getManager(); // Session 管理器周期性的检查是否有过期的 Session
         if (manager != null) {
             try {
                 manager.backgroundProcess();
@@ -5616,7 +5546,7 @@ public class StandardContext extends ContainerBase
                         e);
             }
         }
-        WebResourceRoot resources = getResources();
+        WebResourceRoot resources = getResources(); // 周期性的检查静态资源是否有变化
         if (resources != null) {
             try {
                 resources.backgroundProcess();
@@ -5636,7 +5566,7 @@ public class StandardContext extends ContainerBase
                         resources), e);
             }
         }
-        super.backgroundProcess();
+        super.backgroundProcess(); // 调用父类 ContainerBase 的 backgroundProcess 方法
     }
 
 

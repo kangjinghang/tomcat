@@ -63,7 +63,7 @@ public final class ApplicationFilterChain implements FilterChain {
     // ----------------------------------------------------- Instance Variables
 
     /**
-     * Filters.
+     * Filters. Filter 链中有 Filter 数组，这个好理解
      */
     private ApplicationFilterConfig[] filters = new ApplicationFilterConfig[0];
 
@@ -72,19 +72,19 @@ public final class ApplicationFilterChain implements FilterChain {
      * The int which is used to maintain the current position
      * in the filter chain.
      */
-    private int pos = 0;
+    private int pos = 0; // Filter 链中的当前的调用位置
 
 
     /**
      * The int which gives the current number of filters in the chain.
      */
-    private int n = 0;
+    private int n = 0; // 总共有多少了 Filter
 
 
     /**
      * The servlet instance to be executed by this chain.
      */
-    private Servlet servlet = null;
+    private Servlet servlet = null; // 每个 Filter 链对应一个 Servlet，也就是它要调用的 Servlet
 
 
     /**
@@ -166,7 +166,7 @@ public final class ApplicationFilterChain implements FilterChain {
         throws IOException, ServletException {
 
         // Call the next filter if there is one
-        if (pos < n) {
+        if (pos < n) {  // 每个 Filter 链在内部维护了一个 Filter 数组
             ApplicationFilterConfig filterConfig = filters[pos++];
             try {
                 Filter filter = filterConfig.getFilter();

@@ -16,12 +16,12 @@
  */
 package org.apache.tomcat.util.threads;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
-
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
 
 /**
  * Shared latch that allows the latch to be acquired a limited number of times
@@ -108,6 +108,7 @@ public class LimitLatch {
     /**
      * Acquires a shared latch if one is available or waits for one if no shared
      * latch is current available.
+     * 线程调用这个方法来获得接收新连接的许可，线程可能被阻塞
      * @throws InterruptedException If the current thread is interrupted
      */
     public void countUpOrAwait() throws InterruptedException {
@@ -120,6 +121,7 @@ public class LimitLatch {
     /**
      * Releases a shared latch, making it available for another thread to use.
      * @return the previous counter value
+     * 调用这个方法来释放一个连接许可，那么前面阻塞的线程可能被唤醒
      */
     public long countDown() {
         sync.releaseShared(0);

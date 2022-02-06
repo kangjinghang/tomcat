@@ -16,25 +16,17 @@
  */
 package org.apache.catalina.core;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import javax.management.ObjectName;
-
-import org.apache.catalina.Contained;
-import org.apache.catalina.Container;
-import org.apache.catalina.JmxEnabled;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Pipeline;
-import org.apache.catalina.Valve;
+import org.apache.catalina.*;
 import org.apache.catalina.util.LifecycleBase;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.management.ObjectName;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Standard implementation of a processing <b>Pipeline</b> that will invoke
@@ -158,7 +150,7 @@ public class StandardPipeline extends LifecycleBase implements Pipeline {
     /**
      * Start {@link Valve}s) in this pipeline and implement the requirements
      * of {@link LifecycleBase#startInternal()}.
-     *
+     * 将first（第一个阀门）赋值给current变量，如果current为空，就将basic（基础阀）赋值给current，接下来按单向链表，依次启动阀门，最后设置状态为STARTING
      * @exception LifecycleException if this component detects a fatal error
      *  that prevents this component from being used
      */
@@ -250,7 +242,7 @@ public class StandardPipeline extends LifecycleBase implements Pipeline {
      * if this Valve chooses not to be associated with this Container, or
      * <code>IllegalStateException</code> if it is already associated with
      * a different Container.</p>
-     *
+     * 设置基础阀，这个方法在每个容器（Container，如Engine、Host、Context...）的构造方法中会被调用
      * @param valve Valve to be distinguished as the basic Valve
      */
     @Override

@@ -361,7 +361,7 @@ public class CoyoteAdapter implements Adapter {
                 connector.getService().getContainer().getPipeline().getFirst().invoke(
                         request, response); // 将request交给容器Container的pipeline的第一个Valve（StandardEngineValve）来处理
             }
-            if (request.isAsync()) {
+            if (request.isAsync()) { // 如果是异步 Servlet 请求，仅仅设置一个标志，否则说明是同步 Servlet 请求，就将响应数据刷到浏览器
                 async = true;
                 ReadListener readListener = req.getReadListener();
                 if (readListener != null && request.isFinished()) {
@@ -436,7 +436,7 @@ public class CoyoteAdapter implements Adapter {
             req.getRequestProcessor().setWorkerThreadName(null);
 
             // Recycle the wrapper request and response
-            if (!async) {
+            if (!async) { // 如果不是异步 Servlet 请求，就销毁 Request 对象和 Response 对象
                 updateWrapperErrorCount(request, response);
                 request.recycle();
                 response.recycle();

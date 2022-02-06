@@ -22,7 +22,7 @@ package org.apache.tomcat.util.collections;
  * create an unbounded queue with no requirement to shrink the queue. The aim is
  * to provide the bare minimum of required functionality as quickly as possible
  * with minimum garbage.
- *
+ * offer、poll、size 和 clear 方法，都使用了 Synchronized 关键字进行修饰，用来保证同一时刻只有一个 Acceptor 线程对 Queue 进行读写
  * @param <T> The type of object managed by this queue
  */
 public class SynchronizedQueue<T> {

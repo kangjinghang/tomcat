@@ -434,6 +434,7 @@ public final class Bootstrap {
      * scripts.
      * vm启动参数如下：
      *  -Djava.util.logging.config.file=/Users/kangjinghang/workspace/github/tomcat/conf/logging.properties -Dcatalina.home=/Users/kangjinghang/workspace/github/tomcat -Dcatalina.base=/Users/kangjinghang/workspace/github/tomcat -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager start     * @param args Command line arguments to be processed
+     *  加上这个，-Duser.language=en -Duser.region=us，然后控制台输出为英文日志
      *  然后浏览器输入：http://localhost:8080/index.jsp
      */
     public static void main(String args[]) {

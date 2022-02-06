@@ -16,15 +16,6 @@
  */
 package org.apache.coyote;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.servlet.ReadListener;
-
 import org.apache.tomcat.util.buf.B2CConverter;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -34,6 +25,14 @@ import org.apache.tomcat.util.http.Parameters;
 import org.apache.tomcat.util.http.ServerCookies;
 import org.apache.tomcat.util.net.ApplicationBufferHandler;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.servlet.ReadListener;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is a low-level, efficient representation of a server request. Most
@@ -62,7 +61,7 @@ import org.apache.tomcat.util.res.StringManager;
  * @author Costin Manolache
  * @author Remy Maucherat
  */
-public final class Request {
+public final class Request { // RequestFacade -> connector.Request -> coyote.Request，当前类是协议层的Request
 
     private static final StringManager sm = StringManager.getManager(Request.class);
 
@@ -86,7 +85,7 @@ public final class Request {
     private int localPort;
 
     private final MessageBytes schemeMB = MessageBytes.newInstance();
-
+    // 只是记录字节数组，并不会记录为string，需要的时候才转换成字符串
     private final MessageBytes methodMB = MessageBytes.newInstance();
     private final MessageBytes uriMB = MessageBytes.newInstance();
     private final MessageBytes decodedUriMB = MessageBytes.newInstance();

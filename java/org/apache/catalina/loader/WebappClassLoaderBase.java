@@ -16,6 +16,18 @@
  */
 package org.apache.catalina.loader;
 
+import org.apache.catalina.*;
+import org.apache.catalina.webresources.TomcatURLStreamHandlerFactory;
+import org.apache.juli.WebappProperties;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.InstrumentableClassLoader;
+import org.apache.tomcat.util.ExceptionUtils;
+import org.apache.tomcat.util.IntrospectionUtils;
+import org.apache.tomcat.util.compat.JreCompat;
+import org.apache.tomcat.util.res.StringManager;
+import org.apache.tomcat.util.security.PermissionCheck;
+
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
@@ -29,54 +41,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Policy;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
+import java.security.*;
 import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.ConcurrentModificationException;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.jar.Manifest;
-
-import org.apache.catalina.Container;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.LifecycleState;
-import org.apache.catalina.WebResource;
-import org.apache.catalina.WebResourceRoot;
-import org.apache.catalina.webresources.TomcatURLStreamHandlerFactory;
-import org.apache.juli.WebappProperties;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-import org.apache.tomcat.InstrumentableClassLoader;
-import org.apache.tomcat.util.ExceptionUtils;
-import org.apache.tomcat.util.IntrospectionUtils;
-import org.apache.tomcat.util.compat.JreCompat;
-import org.apache.tomcat.util.res.StringManager;
-import org.apache.tomcat.util.security.PermissionCheck;
 
 /**
  * Specialized web application class loader.
@@ -117,7 +91,7 @@ import org.apache.tomcat.util.security.PermissionCheck;
  * application classes to instrument other classes in the same web
  * application. It does not permit instrumentation of system or container
  * classes or classes in other web apps.
- *
+ * Tomcat 的自定义类加载器 WebAppClassLoader 打破了双亲委托机制
  * @author Remy Maucherat
  * @author Craig R. McClanahan
  */
@@ -873,7 +847,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                         new PrivilegedFindClassByName(name);
                     clazz = AccessController.doPrivileged(dp);
                 } else {
-                    clazz = findClassInternal(name);
+                    clazz = findClassInternal(name); // 1.先在 Web 应用目录下查找类
                 }
             } catch(AccessControlException ace) {
                 log.warn(sm.getString("webappClassLoader.securityException", name,
@@ -887,7 +861,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             }
             if ((clazz == null) && hasExternalRepositories) {
                 try {
-                    clazz = super.findClass(name);
+                    clazz = super.findClass(name); // 2.如果在本地目录没有找到，交给父加载器去查找
                 } catch(AccessControlException ace) {
                     log.warn(sm.getString("webappClassLoader.securityException", name,
                             ace.getMessage()), ace);
@@ -899,7 +873,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                     throw e;
                 }
             }
-            if (clazz == null) {
+            if (clazz == null) { // 3.如果父类也没找到，抛出 ClassNotFoundException
                 if (log.isDebugEnabled()) {
                     log.debug("    --> Returning ClassNotFoundException");
                 }
@@ -1262,7 +1236,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             checkStateForClassLoading(name);
 
             // (0) Check our previously loaded local class cache
-            clazz = findLoadedClass0(name);
+            clazz = findLoadedClass0(name); // 1.先在本地 cache 查找该类是否已经加载过
             if (clazz != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("  Returning class from cache");
@@ -1274,7 +1248,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             }
 
             // (0.1) Check our previously loaded class cache
-            clazz = findLoadedClass(name);
+            clazz = findLoadedClass(name); // 2.从系统类加载器的 cache 中查找是否加载过
             if (clazz != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("  Returning class from cache");
@@ -1290,9 +1264,9 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             //       SRV.10.7.2
             String resourceName = binaryNameToPath(name, false);
 
-            ClassLoader javaseLoader = getJavaseClassLoader();
+            ClassLoader javaseLoader = getJavaseClassLoader(); // 3.尝试用 ExtClassLoader 类加载器类加载，为什么？
             boolean tryLoadingFromJavaseLoader;
-            try {
+            try {  // 4.尝试在本地目录搜索 class 并加载
                 // Use getResource as it won't trigger an expensive
                 // ClassNotFoundException if the resource is not available from
                 // the Java SE class loader. However (see
@@ -1319,7 +1293,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                 // ClassNotFoundException.
                 tryLoadingFromJavaseLoader = true;
             }
-
+            // 5.尝试用系统类加载器 (也就是 AppClassLoader) 来加载
             if (tryLoadingFromJavaseLoader) {
                 try {
                     clazz = javaseLoader.loadClass(name);
@@ -1351,7 +1325,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             boolean delegateLoad = delegate || filter(name, true);
 
             // (1) Delegate to our parent if requested
-            if (delegateLoad) {
+            if (delegateLoad) { // 是否先委派给父类加载器进行加载
                 if (log.isDebugEnabled()) {
                     log.debug("  Delegating to parent classloader1 " + parent);
                 }
@@ -1411,7 +1385,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                 }
             }
         }
-
+        // 6.上述过程都加载失败，抛出异常
         throw new ClassNotFoundException(name);
     }
 
@@ -2557,7 +2531,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     protected Class<?> findLoadedClass0(String name) {
 
         String path = binaryNameToPath(name, true);
-
+        // 查找tomcat的缓存
         ResourceEntry entry = resourceEntries.get(path);
         if (entry != null) {
             return entry.loadedClass;

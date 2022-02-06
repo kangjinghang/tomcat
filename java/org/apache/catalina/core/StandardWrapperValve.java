@@ -120,7 +120,7 @@ final class StandardWrapperValve extends ValveBase {
         // Allocate a servlet instance to process this request
         try {
             if (!unavailable) {
-                servlet = wrapper.allocate(); // 拿到servlet
+                servlet = wrapper.allocate(); // 拿到servlet 1.实例化 Servlet
             }
         } catch (UnavailableException e) {
             container.getLogger().error(
@@ -161,7 +161,7 @@ final class StandardWrapperValve extends ValveBase {
                 requestPathMB);
         // Create the filter chain for this request
         ApplicationFilterChain filterChain =
-                ApplicationFilterFactory.createFilterChain(request, wrapper, servlet); // 执行过滤器链
+                ApplicationFilterFactory.createFilterChain(request, wrapper, servlet); // 执行过滤器链 2.给当前请求创建一个 Filter 链
 
         // Call the filter chain for this request
         // NOTE: This also calls the servlet's service() method
@@ -176,7 +176,7 @@ final class StandardWrapperValve extends ValveBase {
                             request.getAsyncContextInternal().doInternalDispatch();
                         } else {
                             filterChain.doFilter(request.getRequest(),
-                                    response.getResponse());
+                                    response.getResponse()); // 3.调用这个 Filter 链，Filter 链中的最后一个 Filter 会调用 Servlet
                         }
                     } finally {
                         String log = SystemLogHandler.stopCapture();

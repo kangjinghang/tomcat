@@ -16,16 +16,16 @@
  */
 package org.apache.coyote.http11.filters;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
 import org.apache.coyote.InputBuffer;
 import org.apache.coyote.Request;
 import org.apache.coyote.http11.InputFilter;
 import org.apache.tomcat.util.buf.ByteChunk;
 import org.apache.tomcat.util.net.ApplicationBufferHandler;
 import org.apache.tomcat.util.res.StringManager;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Identity input filter.
@@ -131,25 +131,25 @@ public class IdentityInputFilter implements InputFilter, ApplicationBufferHandle
 
     @Override
     public int doRead(ApplicationBufferHandler handler) throws IOException {
-
+        // 当servlet中读取请求体时，会进入到这个方法，该方法返回
         int result = -1;
-
+        // contentLength表示请求体的长度，当读取请求体时，只会返回这么长的数据
         if (contentLength >= 0) {
-            if (remaining > 0) {
-                int nRead = buffer.doRead(handler);
-                if (nRead > remaining) {
+            if (remaining > 0) { // 可能会多次读取请求体，所以记录一下请求体还剩下多少
+                int nRead = buffer.doRead(handler); // 这里的buffer是InputStreamInputBuffer，会从操作系统的RecvBuffer中读取数据，nRead表示读取了多少了数据
+                if (nRead > remaining) { // 如果读到的数据超过了剩余部分，那么将chunk的标记缩小，缩小为剩余部分的最后一个位置，多余数据就不属于请求体了
                     // The chunk is longer than the number of bytes remaining
                     // in the body; changing the chunk length to the number
                     // of bytes remaining
                     handler.getByteBuffer().limit(handler.getByteBuffer().position() + (int) remaining);
                     result = (int) remaining;
-                } else {
+                } else { // 如果真实读到的数据小于剩下的
                     result = nRead;
                 }
-                if (nRead > 0) {
-                    remaining = remaining - nRead;
+                if (nRead > 0) { // 记录一下还需要读多少数据
+                    remaining = remaining - nRead; // 如果剩余数据比真实读到的数据小（多读了，读到下次的了，10-20=-10），remaining将为负数
                 }
-            } else {
+            } else { // 如果没有剩余数据了，返回-1
                 // No more bytes left to be read : return -1 and clear the
                 // buffer
                 if (handler.getByteBuffer() != null) {

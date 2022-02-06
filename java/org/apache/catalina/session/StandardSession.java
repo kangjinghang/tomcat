@@ -16,50 +16,22 @@
  */
 package org.apache.catalina.session;
 
-import java.beans.PropertyChangeSupport;
-import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-import java.io.WriteAbortedException;
-import java.security.AccessController;
-import java.security.Principal;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionActivationListener;
-import javax.servlet.http.HttpSessionAttributeListener;
-import javax.servlet.http.HttpSessionBindingEvent;
-import javax.servlet.http.HttpSessionBindingListener;
-import javax.servlet.http.HttpSessionEvent;
-import javax.servlet.http.HttpSessionIdListener;
-import javax.servlet.http.HttpSessionListener;
-
-import org.apache.catalina.Context;
-import org.apache.catalina.Globals;
-import org.apache.catalina.Manager;
-import org.apache.catalina.Session;
-import org.apache.catalina.SessionEvent;
-import org.apache.catalina.SessionListener;
-import org.apache.catalina.TomcatPrincipal;
+import org.apache.catalina.*;
 import org.apache.catalina.security.SecurityUtil;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.res.StringManager;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.*;
+import java.beans.PropertyChangeSupport;
+import java.io.*;
+import java.security.AccessController;
+import java.security.Principal;
+import java.security.PrivilegedAction;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Standard implementation of the <b>Session</b> interface.  This object is
@@ -372,8 +344,8 @@ public class StandardSession implements HttpSession, Session, Serializable {
     public void tellNew() {
 
         // Notify interested session event listeners
-        fireSessionEvent(Session.SESSION_CREATED_EVENT, null);
-
+        fireSessionEvent(Session.SESSION_CREATED_EVENT, null); // 通知 org.apache.catalina.SessionListener
+        // 获取 Context 内部的 LifecycleListener 并判断是否为 HttpSessionListener
         // Notify interested application event listeners
         Context context = manager.getContext();
         Object listeners[] = context.getApplicationLifecycleListeners();
@@ -386,9 +358,9 @@ public class StandardSession implements HttpSession, Session, Serializable {
                 }
                 HttpSessionListener listener = (HttpSessionListener) o;
                 try {
-                    context.fireContainerEvent("beforeSessionCreated", listener);
-                    listener.sessionCreated(event);
-                    context.fireContainerEvent("afterSessionCreated", listener);
+                    context.fireContainerEvent("beforeSessionCreated", listener); // 注意这是容器内部事件
+                    listener.sessionCreated(event); // 触发 Session Created 事件
+                    context.fireContainerEvent("afterSessionCreated", listener);  // 注意这也是容器内部事件
                 } catch (Throwable t) {
                     ExceptionUtils.handleThrowable(t);
                     try {
